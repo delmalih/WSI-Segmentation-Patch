@@ -50,4 +50,4 @@ if __name__ == "__main__":
     args = parse_args()
     img_ids = utils.get_img_ids(args.images_folder)
     wsi_segmenter = Model.wsi_segmenter(args.patch_size)
-    train(wsi_segmenter, img_ids)
+    train(wsi_segmenter, img_ids, args)
