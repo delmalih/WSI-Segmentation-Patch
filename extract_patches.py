@@ -8,9 +8,11 @@ import numpy as np
 from glob import glob
 from tqdm import tqdm
 import numpy as np
+import argparse
 
 """ Local """
 import constants
+import utils
 
 ###############
 ## Functions ##
@@ -23,32 +25,44 @@ def read_img_and_mask(img_id, img_folder):
     mask = cv2.imread(mask_path_recipient.format(img_id))
     return img, mask
 
-def extract_patches(img_id, img_folder, n_patches, patch_size):
+def extract_patches(img_id, img_folder, patch_size):
     img, mask = read_img_and_mask(img_id, img_folder)
     patches_img = []
     patches_mask = []
-    while len(patches_img) < n_patches:
-        patch_i = np.random.randint(0, img.shape[0] - patch_size)
-        patch_j = np.random.randint(0, img.shape[1] - patch_size)
-        patch_mask = np.mean(mask[patch_i:patch_i+patch_size, patch_j:patch_j+patch_size, ::-1], axis=-1, keepdims=True)
-        patch_mask = (patch_mask > 128).astype(float)
-        if patch_mask.sum() != 0 or np.random.random() < 0.1:
-            patch_img = img[patch_i:patch_i+patch_size, patch_j:patch_j+patch_size, :] / 255.
-            patches_img.append(patch_img)
-            patches_mask.append(patch_mask)
+    for i in range(0, img.shape[0], patch_size):
+        for j in range(0, img.shape[1], patch_size):
+            patch_img = cv2.resize(img[i:i+patch_size, j:j+patch_size, :], (patch_size, patch_size))
+            patch_mask = cv2.resize(mask[i:i+patch_size, j:j+patch_size], (patch_size, patch_size))
+            if patch_img.mean() < 240 or patch_mask.sum() > 0:
+                patches_img.append(patch_img)
+                patches_mask.append(patch_mask)
     patches_img = np.array(patches_img)
     patches_mask = np.array(patches_mask)
     return patches_img, patches_mask
 
-def extract_patches_batch(img_ids, img_folder, n_patches, patch_size):
-    patches_imgs = []
-    patches_masks = []
-    for img_id in img_ids:
-        patches_img, patches_mask = extract_patches(img_id, img_folder, n_patches, patch_size)
-        patches_imgs.append(patches_img)
-        patches_masks.append(patches_mask)
-    patches_imgs = np.array(patches_imgs)
-    patches_masks = np.array(patches_masks)
-    patches_imgs = patches_imgs.reshape(-1, patch_size, patch_size, 3)
-    patches_masks = patches_masks.reshape(-1, patch_size, patch_size, 1)
-    return patches_imgs, patches_masks
+##########
+## MAIN ##
+##########
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Arguments for training")
+    parser.add_argument("-i", "--images_folder", dest="images_folder", help="Path to images (and mask) folder", required=True)
+    parser.add_argument("-o", "--output_folder", dest="output_folder", help="Path to the output folder (for patches)", required=True)
+    parser.add_argument("-ps", "--patch_size", dest="patch_size", help="Patch size", default=constants.PATCH_SIZE, type=int)
+    parser.add_argument("-p", "--train_prop", dest="train_prop", help="Proportion of train set", default=constants.TRAIN_PROPORTION, type=float)
+    return parser.parse_args()
+
+if __name__ == "__main__":
+    args = parse_args()
+    img_ids = glob(args.images_folder + "/**/*.jpg")
+    train_img_ids, val_img_ids = utils.train_val_split(img_ids, args.train_prop)
+    for img_id in tqdm(train_img_ids):
+        patches_img, patches_mask = extract_patches(img_id, args.images_folder, args.patch_size)
+        for k in range(len(patches_img)):
+            cv2.imwrite("{}/train/images/{}_{}.jpg".format(args.output_folder, img_id, k), patches_img[k])
+            cv2.imwrite("{}/train/masks/{}_{}.jpg".format(args.output_folder, img_id, k), patches_mask[k])
+    for img_id in tqdm(val_img_ids):
+        patches_img, patches_mask = extract_patches(img_id, args.images_folder, args.patch_size)
+        for k in range(len(patches_img)):
+            cv2.imwrite("{}/val/images/{}_{}.jpg".format(args.output_folder, img_id, k), patches_img[k])
+            cv2.imwrite("{}/val/masks/{}_{}.jpg".format(args.output_folder, img_id, k), patches_mask[k])

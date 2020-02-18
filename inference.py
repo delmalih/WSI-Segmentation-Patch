@@ -17,14 +17,6 @@ import constants
 ## Functions ##
 ###############
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Arguments for training")
-    parser.add_argument("-i", "--image_path", dest="image_path", help="Path to image", required=True)
-    parser.add_argument("-m", "--model_path", dest="model_path", help="Path to the model weights", required=True)
-    parser.add_argument("-o", "--output_path", dest="output_path", help="Path to save the predicted mask", required=True)
-    parser.add_argument("-ps", "--patch_size", dest="patch_size", help="Patch size", default=constants.PATCH_SIZE, type=int)
-    return parser.parse_args()
-
 def load_model(model_path, patch_size):
     model = Model.wsi_segmenter(patch_size)
     model.load_weights(model_path)
@@ -45,6 +37,14 @@ def inference(model, image, patch_size):
 ##########
 ## MAIN ##
 ##########
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Arguments for training")
+    parser.add_argument("-i", "--image_path", dest="image_path", help="Path to image", required=True)
+    parser.add_argument("-m", "--model_path", dest="model_path", help="Path to the model weights", required=True)
+    parser.add_argument("-o", "--output_path", dest="output_path", help="Path to save the predicted mask", required=True)
+    parser.add_argument("-ps", "--patch_size", dest="patch_size", help="Patch size", default=constants.PATCH_SIZE, type=int)
+    return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()
