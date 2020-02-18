@@ -4,6 +4,7 @@
 
 import keras
 import keras.backend as K
+import tensorflow as tf
 
 #################
 ## Final Model ##
@@ -16,7 +17,7 @@ def wsi_segmenter(img_size):
     encodings = encoder(input_encoder)
     output_decoder = decoder(encodings)
     model = keras.models.Model(input_encoder, output_decoder)
-    model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[f1_m])
+    model.compile(optimizer="adam", loss=binary_focal_loss(), metrics=[f1_m])
     return model
 
 #############
@@ -90,9 +91,9 @@ def residual_se_block(input_tensor, n_filters, filter_size=3, r=1.):
     output_tensor = keras.layers.Add()([x, input_tensor])
     return output_tensor
 
-#############
-## Metrics ##
-#############
+######################
+## Metrics & Losses ##
+######################
 
 def recall_m(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
@@ -110,3 +111,17 @@ def f1_m(y_true, y_pred):
     precision = precision_m(y_true, y_pred)
     recall = recall_m(y_true, y_pred)
     return 2 * precision * recall / (precision + recall + K.epsilon())
+
+def binary_focal_loss(gamma=2., alpha=.25):
+    def binary_focal_loss_fixed(y_true, y_pred):
+        pt_1 = tf.where(tf.equal(y_true, 1), y_pred, tf.ones_like(y_pred))
+        pt_0 = tf.where(tf.equal(y_true, 0), y_pred, tf.zeros_like(y_pred))
+        epsilon = K.epsilon()
+        # clip to prevent NaN's and Inf's
+        pt_1 = K.clip(pt_1, epsilon, 1. - epsilon)
+        pt_0 = K.clip(pt_0, epsilon, 1. - epsilon)
+
+        return -K.sum(alpha * K.pow(1. - pt_1, gamma) * K.log(pt_1)) \
+               -K.sum((1 - alpha) * K.pow(pt_0, gamma) * K.log(1. - pt_0))
+
+    return binary_focal_loss_fixed
