@@ -45,7 +45,7 @@ def train(model, img_ids, args):
         imgs, masks = get_batch(img_ids, args.images_folder, args.batch_size, args.patch_size)
         loss, acc, f1 = model.train_on_batch(imgs, masks)
         model.save(args.model_path)
-        print("Epoch {} | Loss (FL) = {} | Accuracy = {}% | F1 Score = {}%".format(epoch, loss, acc * 100, f1 * 100))
+        print("Epoch {} | Loss = {:.3f} | Accuracy = {:.2f}% | F1 Score = {:.2f}%".format(epoch, loss, acc * 100, f1 * 100))
 
 ##########
 ## MAIN ##
