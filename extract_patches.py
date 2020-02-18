@@ -7,7 +7,6 @@ import cv2
 import numpy as np
 from glob import glob
 from tqdm import tqdm
-import numpy as np
 import argparse
 
 """ Local """
