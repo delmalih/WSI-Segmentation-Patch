@@ -16,15 +16,15 @@ import constants
 ## Functions ##
 ###############
 
-def read_img_and_mask(img_id, img_folder=constants.IMAGES_FOLDER):
+def read_img_and_mask(img_id, img_folder):
     img_path_recipient = img_folder + "/{}.jpg"
     mask_path_recipient = img_folder + "/{}_mask.jpg"
     img = cv2.imread(img_path_recipient.format(img_id))
     mask = cv2.imread(mask_path_recipient.format(img_id))
     return img, mask
 
-def extract_patches(img_id, n_patches, patch_size=constants.PATCH_SIZE):
-    img, mask = read_img_and_mask(img_id)
+def extract_patches(img_id, img_folder, n_patches, patch_size):
+    img, mask = read_img_and_mask(img_id, img_folder)
     patches_img = []
     patches_mask = []
     for _ in range(n_patches):
@@ -38,11 +38,11 @@ def extract_patches(img_id, n_patches, patch_size=constants.PATCH_SIZE):
     patches_mask = np.array(patches_mask)
     return patches_img, patches_mask
 
-def extract_patches_batch(img_ids, n_patches, patch_size=constants.PATCH_SIZE):
+def extract_patches_batch(img_ids, img_folder, n_patches, patch_size):
     patches_imgs = []
     patches_masks = []
     for img_id in img_ids:
-        patches_img, patches_mask = extract_patches(img_id, n_patches, patch_size=patch_size)
+        patches_img, patches_mask = extract_patches(img_id, img_folder, n_patches, patch_size)
         patches_imgs.append(patches_img)
         patches_masks.append(patches_mask)
     patches_imgs = np.array(patches_imgs)
