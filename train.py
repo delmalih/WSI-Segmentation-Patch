@@ -24,11 +24,13 @@ def get_batch(img_ids, n_patches=constants.N_PATCHES, batch_size=constants.BATCH
     print(imgs.shape, masks.shape)
     return imgs, masks
 
-def train(model, img_ids, n_epochs=constants.N_EPOCHS, batch_size=constants.BATCH_SIZE, n_patches=constants.N_PATCHES, patch_size=constants.PATCH_SIZE):
+def train(model, img_ids, n_epochs=constants.N_EPOCHS, batch_size=constants.BATCH_SIZE,
+          n_patches=constants.N_PATCHES, patch_size=constants.PATCH_SIZE, model_path=constants.MODEL_PATH):
     for epoch in range(n_epochs):
         imgs, masks = get_batch(img_ids, n_patches=n_patches, batch_size=batch_size, patch_size=patch_size)
         loss, acc = model.train_on_batch(imgs, masks)
         print("Epoch {} | Loss = {} | Acc = {}%".format(epoch, loss, acc * 100))
+        model.save(model_path)
 
 if __name__ == "__main__":
     img_ids = utils.get_img_ids(constants.IMAGES_FOLDER)
