@@ -32,15 +32,15 @@ def get_batch(img_ids, img_folder, n_patches, batch_size, patch_size):
     imgs, masks = extract_patches_batch(batch_img_ids, img_folder, n_patches, patch_size)
     imgs = imgs / 255.
     masks = (masks > 128).astype(float)
-    print(masks.mean())
+    print(masks.shape)
     return imgs, masks
 
 def train(model, img_ids, args):
     for epoch in range(args.epochs):
         imgs, masks = get_batch(img_ids, args.images_folder, args.n_patches, args.batch_size, args.patch_size)
-        loss, acc = model.train_on_batch(imgs, masks)
+        loss, metric = model.train_on_batch(imgs, masks)
         model.save(args.model_path)
-        print("Epoch {} | Loss (FL) = {} | F1 Score = {}%".format(epoch, loss, acc * 100))
+        print("Epoch {} | Loss (FL) = {} | F1 Score = {}%".format(epoch, loss, metric * 100))
 
 ##########
 ## MAIN ##
