@@ -1,5 +1,5 @@
-keras
 numpy
 tqdm
 opencv-python
 opencv-contrib-python
+tensorflow

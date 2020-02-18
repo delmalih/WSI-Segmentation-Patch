@@ -3,11 +3,11 @@
 #############
 
 """ Global """
-import keras
 import cv2
 import numpy as np
 import argparse
 from tqdm import tqdm
+from tensorflow import keras
 
 """ Local """
 import Model
