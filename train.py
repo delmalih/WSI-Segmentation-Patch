@@ -30,9 +30,6 @@ def parse_args():
 def get_batch(img_ids, img_folder, n_patches, batch_size, patch_size):
     batch_img_ids = np.random.choice(img_ids, size=batch_size)
     imgs, masks = extract_patches_batch(batch_img_ids, img_folder, n_patches, patch_size)
-    imgs = imgs / 255.
-    masks = (masks > 128).astype(float)
-    print(masks.mean())
     return imgs, masks
 
 def train(model, img_ids, args):

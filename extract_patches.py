@@ -30,9 +30,10 @@ def extract_patches(img_id, img_folder, n_patches, patch_size):
     while len(patches_img) < n_patches:
         patch_i = np.random.randint(0, img.shape[0] - patch_size)
         patch_j = np.random.randint(0, img.shape[1] - patch_size)
-        patch_mask = np.mean(mask[patch_i:patch_i+patch_size, patch_j:patch_j+patch_size], axis=-1, keepdims=True)
+        patch_mask = np.mean(mask[patch_i:patch_i+patch_size, patch_j:patch_j+patch_size, ::-1], axis=-1, keepdims=True)
+        patch_mask = (patch_mask > 128).astype(float)
         if patch_mask.sum() != 0 or np.random.random() < 0.1:
-            patch_img = img[patch_i:patch_i+patch_size, patch_j:patch_j+patch_size, :]
+            patch_img = img[patch_i:patch_i+patch_size, patch_j:patch_j+patch_size, :] / 255.
             patches_img.append(patch_img)
             patches_mask.append(patch_mask)
     patches_img = np.array(patches_img)
