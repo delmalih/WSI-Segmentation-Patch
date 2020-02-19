@@ -43,13 +43,13 @@ class DataGenerator(keras.utils.Sequence):
         """ Generates data containing batch_size samples """
         # Initialization
         X = np.empty((self.batch_size, self.patch_size, self.patch_size, 3))
-        y = np.empty((self.batch_size, self.patch_size, self.patch_size, 3))
+        y = np.empty((self.batch_size, self.patch_size, self.patch_size, 1))
 
         # Generate data
         for i, img_id in enumerate(img_ids_temp):
             X[i,] = read_image("{}/images/{}.jpg".format(self.img_folder, img_id), self.patch_size)
             y[i,] = read_mask("{}/masks/{}.jpg".format(self.img_folder, img_id), self.patch_size)
-
+        
         return X, y
     
     def __len__(self):

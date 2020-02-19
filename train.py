@@ -25,7 +25,8 @@ def train(model, img_ids, args):
     model.fit_generator(generator=train_generator,
                         epochs=args.epochs, verbose=1,
                         callbacks=[checkpointer],
-                        steps_per_epoch=args.steps_per_epoch)
+                        steps_per_epoch=args.steps_per_epoch,
+                        use_multiprocessing=False)
 
 ##########
 ## MAIN ##

@@ -17,7 +17,7 @@ def wsi_segmenter(img_size):
     encodings = encoder(input_encoder)
     output_decoder = decoder(encodings)
     model = keras.models.Model(input_encoder, output_decoder)
-    model.compile(optimizer="adam", loss=total_loss, metrics=["acc", f1_m])
+    model.compile(optimizer="adam", loss=total_loss, metrics=["acc", f1_metric])
     return model
 
 #############
@@ -99,46 +99,40 @@ def residual_se_block(input_tensor, n_filters, filter_size=3, r=1.):
 ## Metrics & Losses ##
 ######################
 
-def recall_m(y_true, y_pred):
+def recall_metric(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    print(true_positives.shape)
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
     recall = true_positives / (possible_positives + K.epsilon())
     return recall
 
-def precision_m(y_true, y_pred):
+def precision_metric(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
     precision = true_positives / (predicted_positives + K.epsilon())
     return precision
 
-def f1_m(y_true, y_pred):
-    # precision = precision_m(y_true, y_pred)
-    # recall = recall_m(y_true, y_pred)
-    # return 2 * precision * recall / (precision + recall + K.epsilon())
-    return tf.contrib.metrics.f1_score(y_true, y_pred)
+def f1_metric(y_true, y_pred):
+    precision = precision_metric(y_true, y_pred)
+    recall = recall_metric(y_true, y_pred)
+    return 2 * precision * recall / (precision + recall + K.epsilon())
 
 def binary_focal_loss(gamma=2., alpha=.25):
     def binary_focal_loss_fixed(y_true, y_pred):
+        epsilon = K.epsilon()
         pt_1 = tf.where(tf.equal(y_true, 1), y_pred, tf.ones_like(y_pred))
         pt_0 = tf.where(tf.equal(y_true, 0), y_pred, tf.zeros_like(y_pred))
-        epsilon = K.epsilon()
-        # clip to prevent NaN's and Inf's
         pt_1 = K.clip(pt_1, epsilon, 1. - epsilon)
         pt_0 = K.clip(pt_0, epsilon, 1. - epsilon)
-
-        return -K.sum(alpha * K.pow(1. - pt_1, gamma) * K.log(pt_1)) \
-               -K.sum((1 - alpha) * K.pow(pt_0, gamma) * K.log(1. - pt_0))
-
+        focal_loss = -K.sum(alpha * K.pow(1. - pt_1, gamma) * K.log(pt_1)) - K.sum((1 - alpha) * K.pow(pt_0, gamma) * K.log(1. - pt_0))
+        return focal_loss
     return binary_focal_loss_fixed
 
 def dice_loss(y_true, y_pred):
-    numerator = 2 * tf.reduce_sum(y_true * y_pred, axis=-1)
-    denominator = tf.reduce_sum(y_true + y_pred, axis=-1)
+    numerator = 2 * tf.reduce_mean(y_true * y_pred, axis=-1)
+    denominator = tf.reduce_mean(y_true + y_pred, axis=-1)
     return 1 - (numerator + 1) / (denominator + 1)
 
 def total_loss(y_true, y_pred):
-    return 0.5 * (dice_loss(y_true, y_pred) + keras.losses.binary_crossentropy(y_true, y_pred))
-
-# def MeanIoU(y_true, y_pred):
-#     return tf.compat.v1.metrics.mean_iou(y_true, y_pred, 2)
+    bce = keras.losses.binary_crossentropy(y_true, y_pred)
+    dice = dice_loss(y_true, y_pred)
+    return K.sqrt(dice * bce)
