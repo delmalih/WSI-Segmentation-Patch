@@ -31,11 +31,14 @@ def read_mask(mask_path, patch_size):
     return mask
 
 def get_batch(img_ids, img_folder, batch_size, patch_size):
-    batch_img_ids = np.random.choice(img_ids, size=batch_size)
     images = []; masks = []
-    for img_id in batch_img_ids:
-        images.append(read_image("{}/images/{}.jpg".format(img_folder, img_id), patch_size))
-        masks.append(read_mask("{}/masks/{}.jpg".format(img_folder, img_id), patch_size))
+    while len(images) < batch_size:
+        img_id = np.random.choice(img_ids)
+        img = read_image("{}/images/{}.jpg".format(img_folder, img_id), patch_size)
+        mask = read_mask("{}/masks/{}.jpg".format(img_folder, img_id), patch_size)
+        if mask.sum() > 0:
+            images.append(img)
+            masks.append(mask)
     images = np.array(images)
     masks = np.array(masks)
     return images, masks
@@ -64,4 +67,5 @@ if __name__ == "__main__":
     args = parse_args()
     img_ids = list(set(list(map(lambda x: x.split("/")[-1][:-4], glob(args.images_folder + "/**/*.jpg")))))
     wsi_segmenter = Model.wsi_segmenter(args.patch_size)
+    wsi_segmenter.summary()
     train(wsi_segmenter, img_ids, args)

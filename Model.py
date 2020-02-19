@@ -17,7 +17,7 @@ def wsi_segmenter(img_size):
     encodings = encoder(input_encoder)
     output_decoder = decoder(encodings)
     model = keras.models.Model(input_encoder, output_decoder)
-    model.compile(optimizer="adam", loss=binary_focal_loss(), metrics=["acc", f1_m])
+    model.compile(optimizer="adam", loss=total_loss, metrics=["acc", f1_m])
     return model
 
 #############
@@ -26,7 +26,6 @@ def wsi_segmenter(img_size):
 
 def get_encoder_layer(input_tensor, n_filters):
     x = residual_se_block(input_tensor, n_filters)
-    x = residual_se_block(x, n_filters)
     x = keras.layers.Conv2D(n_filters, 2, strides=2, padding="same")(x)
     return x
 
@@ -35,7 +34,9 @@ def get_encoder(img_size):
     encodings1 = get_encoder_layer(input_encoder, 64)
     encodings2 = get_encoder_layer(encodings1, 128)
     encodings3 = get_encoder_layer(encodings2, 256)
-    encoder_model = keras.models.Model(input_encoder, [encodings1, encodings2, encodings3])
+    encodings4 = get_encoder_layer(encodings3, 512)
+    encodings5 = get_encoder_layer(encodings4, 1024)
+    encoder_model = keras.models.Model(input_encoder, [encodings1, encodings2, encodings3, encodings4, encodings5])
     return encoder_model
 
 #############
@@ -46,7 +47,6 @@ def get_decoder_layer(input_tensor, n_filters, input_encoder=None):
     if input_encoder is not None:
         input_tensor = keras.layers.Concatenate()([input_tensor, input_encoder])
     x = residual_se_block(input_tensor, n_filters)
-    x = residual_se_block(x, n_filters)
     x = keras.layers.Conv2DTranspose(n_filters, 2, strides=2, padding="same")(x)
     return x
 
@@ -54,11 +54,15 @@ def get_decoder(img_size):
     input_decoder1 = keras.layers.Input(shape=(img_size // 2, img_size // 2, 64))
     input_decoder2 = keras.layers.Input(shape=(img_size // 4, img_size // 4, 128))
     input_decoder3 = keras.layers.Input(shape=(img_size // 8, img_size // 8, 256))
-    decodings1 = get_decoder_layer(input_decoder3, 128)
-    decodings2 = get_decoder_layer(decodings1, 64, input_decoder2)
-    decodings3 = get_decoder_layer(decodings2, 32, input_decoder1)
-    output_decoder = keras.layers.Conv2D(1, 3, padding="same", activation="sigmoid")(decodings3)
-    decoder_model = keras.models.Model([input_decoder1, input_decoder2, input_decoder3], output_decoder)
+    input_decoder4 = keras.layers.Input(shape=(img_size // 16, img_size // 16, 512))
+    input_decoder5 = keras.layers.Input(shape=(img_size // 32, img_size // 32, 1024))
+    decodings1 = get_decoder_layer(input_decoder5, 512)
+    decodings2 = get_decoder_layer(decodings1, 256, input_decoder4)
+    decodings3 = get_decoder_layer(decodings2, 128, input_decoder3)
+    decodings4 = get_decoder_layer(decodings3, 64, input_decoder2)
+    decodings5 = get_decoder_layer(decodings4, 64, input_decoder1)
+    output_decoder = keras.layers.Conv2D(1, 3, padding="same", activation="sigmoid")(decodings5)
+    decoder_model = keras.models.Model([input_decoder1, input_decoder2, input_decoder3, input_decoder4, input_decoder5], output_decoder)
     return decoder_model
 
 ###########
@@ -125,3 +129,11 @@ def binary_focal_loss(gamma=2., alpha=.25):
                -K.sum((1 - alpha) * K.pow(pt_0, gamma) * K.log(1. - pt_0))
 
     return binary_focal_loss_fixed
+
+def dice_loss(y_true, y_pred):
+    numerator = 2 * tf.reduce_sum(y_true * y_pred, axis=-1)
+    denominator = tf.reduce_sum(y_true + y_pred, axis=-1)
+    return 1 - (numerator + 1) / (denominator + 1)
+
+def total_loss(y_true, y_pred):
+    return 0.5 * (dice_loss(y_true, y_pred) + keras.losses.binary_crossentropy(y_true, y_pred))

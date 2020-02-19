@@ -32,7 +32,7 @@ def extract_patches(img_id, img_folder, patch_size):
         for j in range(0, img.shape[1], patch_size):
             patch_img = cv2.resize(img[i:i+patch_size, j:j+patch_size, :], (patch_size, patch_size))
             patch_mask = cv2.resize(mask[i:i+patch_size, j:j+patch_size], (patch_size, patch_size))
-            if patch_img.mean() < 240 or patch_mask.sum() > 0:
+            if patch_mask.sum() > 0 or np.random.random() < 0.2:
                 patches_img.append(patch_img)
                 patches_mask.append(patch_mask)
     patches_img = np.array(patches_img)
@@ -53,7 +53,7 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    img_ids = glob(args.images_folder + "/**/*.jpg")
+    img_ids = utils.get_img_ids(args.images_folder)
     train_img_ids, val_img_ids = utils.train_val_split(img_ids, args.train_prop)
     for img_id in tqdm(train_img_ids):
         patches_img, patches_mask = extract_patches(img_id, args.images_folder, args.patch_size)
