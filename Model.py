@@ -17,7 +17,7 @@ def wsi_segmenter(img_size):
     encodings = encoder(input_encoder)
     output_decoder = decoder(encodings)
     model = keras.models.Model(input_encoder, output_decoder)
-    model.compile(optimizer="adam", loss=total_loss, metrics=["acc", f1_m])
+    model.compile(optimizer="adam", loss=total_loss, metrics=["acc", keras.metrics.MeanIoU(), f1_m])
     return model
 
 #############
@@ -101,6 +101,7 @@ def residual_se_block(input_tensor, n_filters, filter_size=3, r=1.):
 
 def recall_m(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    print(true_positives.shape)
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
     recall = true_positives / (possible_positives + K.epsilon())
     return recall
