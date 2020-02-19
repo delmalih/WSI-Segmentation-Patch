@@ -22,10 +22,9 @@ from datagenerator import DataGenerator
 def train(model, img_ids, args):
     train_generator = DataGenerator(img_ids, args.images_folder, args.batch_size, args.patch_size)
     checkpointer = keras.callbacks.ModelCheckpoint(filepath=args.model_path, verbose=1, save_best_only=False)
-    tensorBoard = keras.callbacks.TensorBoard(log_dir="/tmp/tf-logdir", histogram_freq=1, batch_size=args.batch_size, write_grads=True, write_images=True, update_freq="batch")
     model.fit_generator(generator=train_generator,
                         epochs=args.epochs, verbose=1,
-                        callbacks=[tensorBoard, checkpointer],
+                        callbacks=[checkpointer],
                         steps_per_epoch=args.steps_per_epoch)
 
 ##########
