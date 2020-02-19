@@ -17,7 +17,7 @@ def wsi_segmenter(img_size):
     encodings = encoder(input_encoder)
     output_decoder = decoder(encodings)
     model = keras.models.Model(input_encoder, output_decoder)
-    model.compile(optimizer="adam", loss=total_loss, metrics=["acc", MeanIoU, f1_m])
+    model.compile(optimizer="adam", loss=total_loss, metrics=["acc", f1_m])
     return model
 
 #############
@@ -113,9 +113,10 @@ def precision_m(y_true, y_pred):
     return precision
 
 def f1_m(y_true, y_pred):
-    precision = precision_m(y_true, y_pred)
-    recall = recall_m(y_true, y_pred)
-    return 2 * precision * recall / (precision + recall + K.epsilon())
+    # precision = precision_m(y_true, y_pred)
+    # recall = recall_m(y_true, y_pred)
+    # return 2 * precision * recall / (precision + recall + K.epsilon())
+    return tf.contrib.metrics.f1_score(y_true, y_pred)
 
 def binary_focal_loss(gamma=2., alpha=.25):
     def binary_focal_loss_fixed(y_true, y_pred):
@@ -139,5 +140,5 @@ def dice_loss(y_true, y_pred):
 def total_loss(y_true, y_pred):
     return 0.5 * (dice_loss(y_true, y_pred) + keras.losses.binary_crossentropy(y_true, y_pred))
 
-def MeanIoU(y_true, y_pred):
-    return tf.compat.v1.metrics.mean_iou(y_true, y_pred, 2)
+# def MeanIoU(y_true, y_pred):
+#     return tf.compat.v1.metrics.mean_iou(y_true, y_pred, 2)
