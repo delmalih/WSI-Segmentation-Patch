@@ -4,51 +4,29 @@
 
 """ Global """
 import cv2
+import argparse
 import numpy as np
 from glob import glob
-import argparse
+from tensorflow import keras
 
 """ Local """
-import constants
 import utils
 import Model
+import constants
+from datagenerator import DataGenerator
 
 ###############
 ## Functions ##
 ###############
 
-def read_image(img_path, patch_size):
-    img = cv2.imread(img_path)
-    img = cv2.resize(img, (patch_size, patch_size))
-    img = img[:, :, ::-1] / 255.
-    return img
-
-def read_mask(mask_path, patch_size):
-    mask = cv2.imread(mask_path)
-    mask = cv2.resize(mask, (patch_size, patch_size))
-    mask = np.mean(mask, axis=-1, keepdims=True)
-    mask = (mask > 128).astype(np.float32)
-    return mask
-
-def get_batch(img_ids, img_folder, batch_size, patch_size):
-    images = []; masks = []
-    while len(images) < batch_size:
-        img_id = np.random.choice(img_ids)
-        img = read_image("{}/images/{}.jpg".format(img_folder, img_id), patch_size)
-        mask = read_mask("{}/masks/{}.jpg".format(img_folder, img_id), patch_size)
-        if mask.sum() > 0:
-            images.append(img)
-            masks.append(mask)
-    images = np.array(images)
-    masks = np.array(masks)
-    return images, masks
-
 def train(model, img_ids, args):
-    for epoch in range(args.epochs):
-        imgs, masks = get_batch(img_ids, args.images_folder, args.batch_size, args.patch_size)
-        loss, acc, f1 = model.train_on_batch(imgs, masks)
-        model.save(args.model_path)
-        print("Epoch {} | Loss = {:.3f} | Accuracy = {:.2f}% | F1 Score = {:.2f}%".format(epoch, loss, acc * 100, f1 * 100))
+    train_generator = DataGenerator(img_ids, args.images_folder, args.batch_size, args.patch_size)
+    checkpointer = keras.callbacks.ModelCheckpoint(filepath=args.model_path, verbose=1, save_best_only=False)
+    tensorBoard = keras.callbacks.TensorBoard(log_dir="/tmp/tf-logdir", histogram_freq=1, batch_size=args.batch_size, write_grads=True, write_images=True, update_freq="batch")
+    model.fit_generator(generator=train_generator,
+                        epochs=args.epochs, verbose=1,
+                        callbacks=[tensorBoard, checkpointer],
+                        steps_per_epoch=args.steps_per_epoch)
 
 ##########
 ## MAIN ##
@@ -61,6 +39,7 @@ def parse_args():
     parser.add_argument("-ps", "--patch_size", dest="patch_size", help="Patch size", default=constants.PATCH_SIZE, type=int)
     parser.add_argument("-bs", "--batch_size", dest="batch_size", help="Batch size", default=constants.BATCH_SIZE, type=int)
     parser.add_argument("-e", "--epochs", dest="epochs", help="Number of epochs", default=constants.N_EPOCHS, type=int)
+    parser.add_argument("-spe", "--steps_per_epoch", dest="steps_per_epoch", help="Number of steps per epochs", default=constants.STEPS_PER_EPOCH, type=int)
     return parser.parse_args()
 
 if __name__ == "__main__":
