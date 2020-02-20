@@ -135,4 +135,4 @@ def dice_loss(y_true, y_pred):
 def total_loss(y_true, y_pred):
     bce = keras.losses.binary_crossentropy(y_true, y_pred)
     dice = dice_loss(y_true, y_pred)
-    return K.sqrt(dice * bce)
+    return 0.5 * (dice + bce)
