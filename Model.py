@@ -26,7 +26,8 @@ def wsi_segmenter(img_size):
 
 def get_encoder_layer(input_tensor, n_filters):
     x = residual_se_block(input_tensor, n_filters)
-    x = keras.layers.Conv2D(n_filters, 2, strides=2, padding="same")(x)
+    x = residual_se_block(x, n_filters)
+    x = keras.layers.Conv2D(n_filters, 3, strides=2, padding="same")(x)
     return x
 
 def get_encoder(img_size):
@@ -47,7 +48,8 @@ def get_decoder_layer(input_tensor, n_filters, input_encoder=None):
     if input_encoder is not None:
         input_tensor = keras.layers.Concatenate()([input_tensor, input_encoder])
     x = residual_se_block(input_tensor, n_filters)
-    x = keras.layers.Conv2DTranspose(n_filters, 2, strides=2, padding="same")(x)
+    x = residual_se_block(x, n_filters)
+    x = keras.layers.Conv2DTranspose(n_filters, 3, strides=2, padding="same")(x)
     return x
 
 def get_decoder(img_size):
@@ -84,14 +86,14 @@ def residual_se_block(input_tensor, n_filters, filter_size=3, r=1.):
     x = keras.layers.Conv2D(n_filters, filter_size, padding="same")(x)
     x = keras.layers.BatchNormalization()(x)
     x = keras.layers.Activation("relu")(x)
-    x_se = keras.layers.Lambda(global_max_pooling)(x)
-    x_se = keras.layers.Conv2D(int(n_filters / r), 1, padding="same")(x_se)
-    x_se = keras.layers.BatchNormalization()(x_se)
-    x_se = keras.layers.Activation("relu")(x_se)
-    x_se = keras.layers.Conv2D(n_filters, 1, padding="same")(x_se)
-    x_se = keras.layers.BatchNormalization()(x_se)
-    x_se = keras.layers.Activation("sigmoid")(x_se)
-    x = keras.layers.Multiply()([x, x_se])
+    # x_se = keras.layers.Lambda(global_max_pooling)(x)
+    # x_se = keras.layers.Conv2D(int(n_filters / r), 1, padding="same")(x_se)
+    # x_se = keras.layers.BatchNormalization()(x_se)
+    # x_se = keras.layers.Activation("relu")(x_se)
+    # x_se = keras.layers.Conv2D(n_filters, 1, padding="same")(x_se)
+    # x_se = keras.layers.BatchNormalization()(x_se)
+    # x_se = keras.layers.Activation("sigmoid")(x_se)
+    # x = keras.layers.Multiply()([x, x_se])
     output_tensor = keras.layers.Add()([x, input_tensor])
     return output_tensor
 
