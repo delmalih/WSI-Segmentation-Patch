@@ -17,7 +17,7 @@ def wsi_segmenter(img_size):
     encodings = encoder(input_encoder)
     output_decoder = decoder(encodings)
     model = keras.models.Model(input_encoder, output_decoder)
-    model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["acc", f1_metric])
+    model.compile(optimizer="adam", loss=total_loss, metrics=["acc", f1_metric])
     return model
 
 #############
@@ -137,4 +137,4 @@ def dice_loss(y_true, y_pred):
 def total_loss(y_true, y_pred):
     bce = keras.losses.binary_crossentropy(y_true, y_pred)
     dice = dice_loss(y_true, y_pred)
-    return 0.5 * (dice + bce)
+    return 0.8 * bce + 0.2 * dice
