@@ -24,6 +24,7 @@ def train(model, train_img_ids, val_img_ids, args):
     val_generator = DataGenerator(val_img_ids, args.val_images_folder, args.batch_size, args.patch_size)
     checkpointer = keras.callbacks.ModelCheckpoint(filepath=args.model_path, verbose=1, save_best_only=False)
     model.fit_generator(generator=train_generator,
+                        validation_data=val_generator,
                         epochs=args.epochs, verbose=1,
                         callbacks=[checkpointer],
                         steps_per_epoch=args.steps_per_epoch,
