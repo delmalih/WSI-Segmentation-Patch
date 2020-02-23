@@ -38,7 +38,6 @@ def parse_args():
     parser.add_argument("-ti", "--train_images_folder", dest="train_images_folder", help="Path to train patches images (and mask) folder", required=True)
     parser.add_argument("-vi", "--val_images_folder", dest="val_images_folder", help="Path to val patches images (and mask) folder", required=True)
     parser.add_argument("-m", "--model_path", dest="model_path", help="Path to the model weights", required=True)
-    parser.add_argument("-m", "--model_path", dest="model_path", help="Path to the model weights", required=True)
     parser.add_argument("-ps", "--patch_size", dest="patch_size", help="Patch size", default=constants.PATCH_SIZE, type=int)
     parser.add_argument("-bs", "--batch_size", dest="batch_size", help="Batch size", default=constants.BATCH_SIZE, type=int)
     parser.add_argument("-e", "--epochs", dest="epochs", help="Number of epochs", default=constants.N_EPOCHS, type=int)
