@@ -17,7 +17,7 @@ def wsi_segmenter(img_size):
     encodings = encoder(input_encoder)
     output_decoder = decoder(encodings)
     model = keras.models.Model(input_encoder, output_decoder)
-    model.compile(optimizer="adam", loss=total_loss, metrics=["acc", f1_metric])
+    model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["acc", f1_metric])
     return model
 
 #############
