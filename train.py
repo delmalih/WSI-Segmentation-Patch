@@ -19,8 +19,9 @@ from datagenerator import DataGenerator
 ## Functions ##
 ###############
 
-def train(model, img_ids, args):
-    train_generator = DataGenerator(img_ids, args.images_folder, args.batch_size, args.patch_size)
+def train(model, train_img_ids, val_img_ids, args):
+    train_generator = DataGenerator(train_img_ids, args.train_images_folder, args.batch_size, args.patch_size)
+    val_generator = DataGenerator(val_img_ids, args.val_images_folder, args.batch_size, args.patch_size)
     checkpointer = keras.callbacks.ModelCheckpoint(filepath=args.model_path, verbose=1, save_best_only=False)
     model.fit_generator(generator=train_generator,
                         epochs=args.epochs, verbose=1,
@@ -34,7 +35,9 @@ def train(model, img_ids, args):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Arguments for training")
-    parser.add_argument("-i", "--images_folder", dest="images_folder", help="Path to patches images (and mask) folder", required=True)
+    parser.add_argument("-ti", "--train_images_folder", dest="train_images_folder", help="Path to train patches images (and mask) folder", required=True)
+    parser.add_argument("-vi", "--val_images_folder", dest="val_images_folder", help="Path to val patches images (and mask) folder", required=True)
+    parser.add_argument("-m", "--model_path", dest="model_path", help="Path to the model weights", required=True)
     parser.add_argument("-m", "--model_path", dest="model_path", help="Path to the model weights", required=True)
     parser.add_argument("-ps", "--patch_size", dest="patch_size", help="Patch size", default=constants.PATCH_SIZE, type=int)
     parser.add_argument("-bs", "--batch_size", dest="batch_size", help="Batch size", default=constants.BATCH_SIZE, type=int)
@@ -44,7 +47,8 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    img_ids = list(set(list(map(lambda x: x.split("/")[-1][:-4], glob(args.images_folder + "/**/*.jpg")))))
+    train_img_ids = list(set(list(map(lambda x: x.split("/")[-1][:-4], glob(args.train_images_folder + "/**/*.jpg")))))
+    val_img_ids = list(set(list(map(lambda x: x.split("/")[-1][:-4], glob(args.val_images_folder + "/**/*.jpg")))))
     wsi_segmenter = Model.wsi_segmenter(args.patch_size)
     wsi_segmenter.summary()
-    train(wsi_segmenter, img_ids, args)
+    train(wsi_segmenter, train_img_ids, val_img_ids, args)
