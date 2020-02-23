@@ -27,7 +27,6 @@ def train(model, train_img_ids, val_img_ids, args):
                         validation_data=val_generator,
                         epochs=args.epochs, verbose=1,
                         callbacks=[checkpointer],
-                        steps_per_epoch=args.steps_per_epoch,
                         use_multiprocessing=False)
 
 ##########
@@ -42,7 +41,6 @@ def parse_args():
     parser.add_argument("-ps", "--patch_size", dest="patch_size", help="Patch size", default=constants.PATCH_SIZE, type=int)
     parser.add_argument("-bs", "--batch_size", dest="batch_size", help="Batch size", default=constants.BATCH_SIZE, type=int)
     parser.add_argument("-e", "--epochs", dest="epochs", help="Number of epochs", default=constants.N_EPOCHS, type=int)
-    parser.add_argument("-spe", "--steps_per_epoch", dest="steps_per_epoch", help="Number of steps per epochs", default=constants.STEPS_PER_EPOCH, type=int)
     return parser.parse_args()
 
 if __name__ == "__main__":
