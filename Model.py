@@ -25,8 +25,8 @@ def wsi_segmenter(img_size):
 #############
 
 def get_encoder_layer(input_tensor, n_filters):
-    x = residual_se_block(input_tensor, n_filters)
-    x = residual_se_block(x, n_filters)
+    x = residual_conv_block(input_tensor, n_filters)
+    x = residual_conv_block(x, n_filters)
     x = keras.layers.Conv2D(n_filters, 3, strides=2, padding="same")(x)
     return x
 
@@ -47,8 +47,8 @@ def get_encoder(img_size):
 def get_decoder_layer(input_tensor, n_filters, input_encoder=None):
     if input_encoder is not None:
         input_tensor = keras.layers.Concatenate()([input_tensor, input_encoder])
-    x = residual_se_block(input_tensor, n_filters)
-    x = residual_se_block(x, n_filters)
+    x = residual_unconv_block(input_tensor, n_filters)
+    x = residual_unconv_block(x, n_filters)
     x = keras.layers.Conv2DTranspose(n_filters, 3, strides=2, padding="same")(x)
     return x
 
@@ -71,29 +71,27 @@ def get_decoder(img_size):
 ## Utils ##
 ###########
 
-def global_max_pooling(x):
-    x = keras.backend.max(x, axis=1, keepdims=True)
-    x = keras.backend.max(x, axis=1, keepdims=True)
-    return x
-
-def residual_se_block(input_tensor, n_filters, filter_size=3, r=1.):
+def residual_conv_block(input_tensor, n_filters, filter_size=3, r=1.):
     input_tensor = keras.layers.Conv2D(n_filters, 1, padding="same")(input_tensor)
     input_tensor = keras.layers.BatchNormalization()(input_tensor)
     input_tensor = keras.layers.Activation("relu")(input_tensor)
     x = keras.layers.Conv2D(n_filters, filter_size, padding="same")(input_tensor)
     x = keras.layers.BatchNormalization()(x)
-    x = keras.layers.Activation("relu")(x)
     x = keras.layers.Conv2D(n_filters, filter_size, padding="same")(x)
     x = keras.layers.BatchNormalization()(x)
     x = keras.layers.Activation("relu")(x)
-    x_se = keras.layers.Lambda(global_max_pooling)(x)
-    x_se = keras.layers.Conv2D(int(n_filters / r), 1, padding="same")(x_se)
-    x_se = keras.layers.BatchNormalization()(x_se)
-    x_se = keras.layers.Activation("relu")(x_se)
-    x_se = keras.layers.Conv2D(n_filters, 1, padding="same")(x_se)
-    x_se = keras.layers.BatchNormalization()(x_se)
-    x_se = keras.layers.Activation("sigmoid")(x_se)
-    x = keras.layers.Multiply()([x, x_se])
+    output_tensor = keras.layers.Add()([x, input_tensor])
+    return output_tensor
+
+def residual_unconv_block(input_tensor, n_filters, filter_size=3, r=1.):
+    input_tensor = keras.layers.Conv2DTranspose(n_filters, 1, padding="same")(input_tensor)
+    input_tensor = keras.layers.BatchNormalization()(input_tensor)
+    input_tensor = keras.layers.Activation("relu")(input_tensor)
+    x = keras.layers.Conv2DTranspose(n_filters, filter_size, padding="same")(input_tensor)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.Conv2DTranspose(n_filters, filter_size, padding="same")(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.Activation("relu")(x)
     output_tensor = keras.layers.Add()([x, input_tensor])
     return output_tensor
 
@@ -101,40 +99,30 @@ def residual_se_block(input_tensor, n_filters, filter_size=3, r=1.):
 ## Metrics & Losses ##
 ######################
 
-def recall_metric(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    recall = true_positives / (possible_positives + K.epsilon())
-    return recall
-
-def precision_metric(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-    precision = true_positives / (predicted_positives + K.epsilon())
-    return precision
-
 def f1_metric(y_true, y_pred):
+
+    def precision_metric(y_true, y_pred):
+        true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+        predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+        precision = true_positives / (predicted_positives + K.epsilon())
+        return precision
+
+    def recall_metric(y_true, y_pred):
+        true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+        possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+        recall = true_positives / (possible_positives + K.epsilon())
+        return recall
+
     precision = precision_metric(y_true, y_pred)
     recall = recall_metric(y_true, y_pred)
     return 2 * precision * recall / (precision + recall + K.epsilon())
 
-def binary_focal_loss(gamma=2., alpha=.25):
-    def binary_focal_loss_fixed(y_true, y_pred):
-        epsilon = K.epsilon()
-        pt_1 = tf.where(tf.equal(y_true, 1), y_pred, tf.ones_like(y_pred))
-        pt_0 = tf.where(tf.equal(y_true, 0), y_pred, tf.zeros_like(y_pred))
-        pt_1 = K.clip(pt_1, epsilon, 1. - epsilon)
-        pt_0 = K.clip(pt_0, epsilon, 1. - epsilon)
-        focal_loss = -K.sum(alpha * K.pow(1. - pt_1, gamma) * K.log(pt_1)) - K.sum((1 - alpha) * K.pow(pt_0, gamma) * K.log(1. - pt_0))
-        return focal_loss
-    return binary_focal_loss_fixed
+# def dice_loss(y_true, y_pred):
+#     numerator = 2 * tf.reduce_mean(y_true * y_pred, axis=-1)
+#     denominator = tf.reduce_mean(y_true + y_pred, axis=-1)
+#     return 1 - (numerator + 1) / (denominator + 1)
 
-def dice_loss(y_true, y_pred):
-    numerator = 2 * tf.reduce_mean(y_true * y_pred, axis=-1)
-    denominator = tf.reduce_mean(y_true + y_pred, axis=-1)
-    return 1 - (numerator + 1) / (denominator + 1)
-
-def total_loss(y_true, y_pred):
-    bce = keras.losses.binary_crossentropy(y_true, y_pred)
-    dice = dice_loss(y_true, y_pred)
-    return 0.8 * bce + 0.2 * dice
+# def total_loss(y_true, y_pred):
+#     bce = keras.losses.binary_crossentropy(y_true, y_pred)
+#     dice = dice_loss(y_true, y_pred)
+#     return 0.8 * bce + 0.2 * dice
