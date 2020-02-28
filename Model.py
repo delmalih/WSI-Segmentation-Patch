@@ -25,8 +25,8 @@ def wsi_segmenter(img_size):
 #############
 
 def get_encoder_layer(input_tensor, n_filters):
-    x = residual_conv_block(input_tensor, n_filters)
-    x = residual_conv_block(x, n_filters)
+    x = residual_block(input_tensor, n_filters)
+    x = residual_block(x, n_filters)
     x = keras.layers.Conv2D(n_filters, 3, strides=2, padding="same")(x)
     return x
 
@@ -47,8 +47,8 @@ def get_encoder(img_size):
 def get_decoder_layer(input_tensor, n_filters, input_encoder=None):
     if input_encoder is not None:
         input_tensor = keras.layers.Concatenate()([input_tensor, input_encoder])
-    x = residual_unconv_block(input_tensor, n_filters)
-    x = residual_unconv_block(x, n_filters)
+    x = residual_block(input_tensor, n_filters)
+    x = residual_block(x, n_filters)
     x = keras.layers.Conv2DTranspose(n_filters, 3, strides=2, padding="same")(x)
     return x
 
@@ -71,7 +71,7 @@ def get_decoder(img_size):
 ## Utils ##
 ###########
 
-def residual_conv_block(input_tensor, n_filters, filter_size=3, r=1.):
+def residual_block(input_tensor, n_filters, filter_size=3):
     input_tensor = keras.layers.Conv2D(n_filters, 1, padding="same")(input_tensor)
     input_tensor = keras.layers.BatchNormalization()(input_tensor)
     input_tensor = keras.layers.Activation("relu")(input_tensor)
@@ -79,19 +79,6 @@ def residual_conv_block(input_tensor, n_filters, filter_size=3, r=1.):
     x = keras.layers.BatchNormalization()(x)
     x = keras.layers.Activation("relu")(x)
     x = keras.layers.Conv2D(n_filters, filter_size, padding="same")(x)
-    x = keras.layers.BatchNormalization()(x)
-    x = keras.layers.Activation("relu")(x)
-    output_tensor = keras.layers.Add()([x, input_tensor])
-    return output_tensor
-
-def residual_unconv_block(input_tensor, n_filters, filter_size=3, r=1.):
-    input_tensor = keras.layers.Conv2DTranspose(n_filters, 1, padding="same")(input_tensor)
-    input_tensor = keras.layers.BatchNormalization()(input_tensor)
-    input_tensor = keras.layers.Activation("relu")(input_tensor)
-    x = keras.layers.Conv2DTranspose(n_filters, filter_size, padding="same")(input_tensor)
-    x = keras.layers.BatchNormalization()(x)
-    x = keras.layers.Activation("relu")(x)
-    x = keras.layers.Conv2DTranspose(n_filters, filter_size, padding="same")(x)
     x = keras.layers.BatchNormalization()(x)
     x = keras.layers.Activation("relu")(x)
     output_tensor = keras.layers.Add()([x, input_tensor])
