@@ -32,11 +32,11 @@ def get_encoder_layer(input_tensor, n_filters):
 
 def get_encoder(img_size):
     input_encoder = keras.layers.Input(shape=(img_size, img_size, 3))
-    encodings1 = get_encoder_layer(input_encoder, 64)
-    encodings2 = get_encoder_layer(encodings1, 128)
-    encodings3 = get_encoder_layer(encodings2, 256)
-    encodings4 = get_encoder_layer(encodings3, 512)
-    encodings5 = get_encoder_layer(encodings4, 1024)
+    encodings1 = get_encoder_layer(input_encoder, 32)
+    encodings2 = get_encoder_layer(encodings1, 64)
+    encodings3 = get_encoder_layer(encodings2, 128)
+    encodings4 = get_encoder_layer(encodings3, 256)
+    encodings5 = get_encoder_layer(encodings4, 512)
     encoder_model = keras.models.Model(input_encoder, [encodings1, encodings2, encodings3, encodings4, encodings5])
     return encoder_model
 
@@ -53,16 +53,16 @@ def get_decoder_layer(input_tensor, n_filters, input_encoder=None):
     return x
 
 def get_decoder(img_size):
-    input_decoder1 = keras.layers.Input(shape=(img_size // 2, img_size // 2, 64))
-    input_decoder2 = keras.layers.Input(shape=(img_size // 4, img_size // 4, 128))
-    input_decoder3 = keras.layers.Input(shape=(img_size // 8, img_size // 8, 256))
-    input_decoder4 = keras.layers.Input(shape=(img_size // 16, img_size // 16, 512))
-    input_decoder5 = keras.layers.Input(shape=(img_size // 32, img_size // 32, 1024))
-    decodings1 = get_decoder_layer(input_decoder5, 512)
-    decodings2 = get_decoder_layer(decodings1, 256, input_decoder4)
-    decodings3 = get_decoder_layer(decodings2, 128, input_decoder3)
-    decodings4 = get_decoder_layer(decodings3, 64, input_decoder2)
-    decodings5 = get_decoder_layer(decodings4, 64, input_decoder1)
+    input_decoder1 = keras.layers.Input(shape=(img_size // 2, img_size // 2, 32))
+    input_decoder2 = keras.layers.Input(shape=(img_size // 4, img_size // 4, 64))
+    input_decoder3 = keras.layers.Input(shape=(img_size // 8, img_size // 8, 128))
+    input_decoder4 = keras.layers.Input(shape=(img_size // 16, img_size // 16, 256))
+    input_decoder5 = keras.layers.Input(shape=(img_size // 32, img_size // 32, 512))
+    decodings1 = get_decoder_layer(input_decoder5, 256)
+    decodings2 = get_decoder_layer(decodings1, 128, input_decoder4)
+    decodings3 = get_decoder_layer(decodings2, 64, input_decoder3)
+    decodings4 = get_decoder_layer(decodings3, 32, input_decoder2)
+    decodings5 = get_decoder_layer(decodings4, 16, input_decoder1)
     output_decoder = keras.layers.Conv2D(1, 3, padding="same", activation="sigmoid")(decodings5)
     decoder_model = keras.models.Model([input_decoder1, input_decoder2, input_decoder3, input_decoder4, input_decoder5], output_decoder)
     return decoder_model
