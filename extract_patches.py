@@ -32,8 +32,9 @@ def extract_patches(img_id, img_folder, patch_size):
         for j in range(0, img.shape[1], patch_size):
             patch_img = cv2.resize(img[i:i+patch_size, j:j+patch_size, :], (patch_size, patch_size))
             patch_mask = cv2.resize(mask[i:i+patch_size, j:j+patch_size], (patch_size, patch_size))
-            patches_img.append(patch_img)
-            patches_mask.append(patch_mask)
+            if patch_img.mean() < 200:
+                patches_img.append(patch_img)
+                patches_mask.append(patch_mask)
     patches_img = np.array(patches_img)
     patches_mask = np.array(patches_mask)
     return patches_img, patches_mask
