@@ -24,17 +24,17 @@ def read_img_and_mask(img_id, img_folder):
     mask = cv2.imread(mask_path_recipient.format(img_id))
     return img, mask
 
-def extract_patches(img_id, img_folder, patch_size):
+def extract_patches(img_id, img_folder, patch_size, patches_per_image):
     img, mask = read_img_and_mask(img_id, img_folder)
     patches_img = []
     patches_mask = []
-    for i in range(0, img.shape[0], patch_size):
-        for j in range(0, img.shape[1], patch_size):
-            patch_img = cv2.resize(img[i:i+patch_size, j:j+patch_size, :], (patch_size, patch_size))
-            patch_mask = cv2.resize(mask[i:i+patch_size, j:j+patch_size], (patch_size, patch_size))
-            if patch_img.mean() < 220:
-                patches_img.append(patch_img)
-                patches_mask.append(patch_mask)
+    for k in range(patches_per_image):
+        i = np.random.randint(0, img.shape[0] - patch_size)
+        j = np.random.randint(0, img.shape[1] - patch_size)
+        patch_img = cv2.resize(img[i:i+patch_size, j:j+patch_size, :], (patch_size, patch_size))
+        patch_mask = cv2.resize(mask[i:i+patch_size, j:j+patch_size], (patch_size, patch_size))
+        patches_img.append(patch_img)
+        patches_mask.append(patch_mask)
     patches_img = np.array(patches_img)
     patches_mask = np.array(patches_mask)
     return patches_img, patches_mask
@@ -49,6 +49,7 @@ def parse_args():
     parser.add_argument("-o", "--output_folder", dest="output_folder", help="Path to the output folder (for patches)", required=True)
     parser.add_argument("-ps", "--patch_size", dest="patch_size", help="Patch size", default=constants.PATCH_SIZE, type=int)
     parser.add_argument("-p", "--train_prop", dest="train_prop", help="Proportion of train set", default=constants.TRAIN_PROPORTION, type=float)
+    parser.add_argument("-ppi", "--patches_per_image", dest="patches_per_image", help="Nb patches per image", default=constants.PATCHES_PER_IMAGE, type=int)
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -56,7 +57,7 @@ if __name__ == "__main__":
     img_ids = utils.get_img_ids(args.images_folder)
     train_img_ids, val_img_ids = utils.train_val_split(img_ids, args.train_prop)
     for img_id in tqdm(train_img_ids):
-        patches_img, patches_mask = extract_patches(img_id, args.images_folder, args.patch_size)
+        patches_img, patches_mask = extract_patches(img_id, args.images_folder, args.patch_size, args.patches_per_image)
         for k in range(len(patches_img)):
             cv2.imwrite("{}/train/images/{}_{}.jpg".format(args.output_folder, img_id, k), patches_img[k])
             cv2.imwrite("{}/train/masks/{}_{}.jpg".format(args.output_folder, img_id, k), patches_mask[k])
