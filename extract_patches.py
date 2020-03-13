@@ -62,7 +62,7 @@ if __name__ == "__main__":
             cv2.imwrite("{}/train/images/{}_{}.jpg".format(args.output_folder, img_id, k), patches_img[k])
             cv2.imwrite("{}/train/masks/{}_{}.jpg".format(args.output_folder, img_id, k), patches_mask[k])
     for img_id in tqdm(val_img_ids):
-        patches_img, patches_mask = extract_patches(img_id, args.images_folder, args.patch_size)
+        patches_img, patches_mask = extract_patches(img_id, args.images_folder, args.patch_size, args.patches_per_image)
         for k in range(len(patches_img)):
             cv2.imwrite("{}/val/images/{}_{}.jpg".format(args.output_folder, img_id, k), patches_img[k])
             cv2.imwrite("{}/val/masks/{}_{}.jpg".format(args.output_folder, img_id, k), patches_mask[k])
