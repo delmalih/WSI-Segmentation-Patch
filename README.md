@@ -1,1 +1,1 @@
-# WSI-Segmentation
+# WSI-Segmentation-Patch
