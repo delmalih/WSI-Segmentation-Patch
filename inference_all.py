@@ -30,7 +30,7 @@ if __name__ == "__main__":
         command = "python inference.py -i {}/{}.jpg -m {} -o {}/{}_mask -ps {}".format(
             args.image_folder, img_id,
             args.model_path,
-            args.output_folder, img_id,
+            args.output_path, img_id,
             args.patch_size
         )
         os.system(command)
