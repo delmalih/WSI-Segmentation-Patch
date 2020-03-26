@@ -26,9 +26,8 @@ def inference(model, image, patch_size):
     mask = np.zeros(image.shape[:2])
     counter = np.zeros(image.shape[:2])
     stride = int(patch_size / 8)
-    for i in range(0, image.shape[0], stride):
-        print("Line {} / {}".format(i // stride, image.shape[0] // stride))
-        for j in tqdm(range(0, image.shape[1], stride)):
+    for i in tqdm(range(0, image.shape[0], stride)):
+        for j in range(0, image.shape[1], stride):
             patch_img = image[i:i+patch_size, j:j+patch_size]
             patch_img_shape = patch_img.shape[:2]
             patch_img = cv2.resize(patch_img, (patch_size, patch_size))
@@ -57,5 +56,5 @@ if __name__ == "__main__":
     mask = inference(model, image, args.patch_size)
     mask = (mask * 255).astype(np.uint8)
     mask_th = ((mask > 128) * 255).astype(np.uint8)
-    cv2.imwrite(args.output_path, mask)
-    cv2.imwrite(args.output_path+"-thresh.jpg", mask_th)
+    cv2.imwrite(args.output_path[:-4]+"-raw.jpg", mask)
+    cv2.imwrite(args.output_path[:-4]+"-thresh.jpg", mask_th)
