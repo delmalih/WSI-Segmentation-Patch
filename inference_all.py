@@ -24,7 +24,7 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    img_ids = utils.get_img_ids(args.images_folder)
+    img_ids = utils.get_img_ids(args.image_folder)
     for img_id in img_ids:
         print("==== {} ====".format(img_id))
         command = "python inference.py -i {}/{}.jpg -m {} -o {}/{}_mask -ps {}".format(
