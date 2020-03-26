@@ -27,7 +27,7 @@ if __name__ == "__main__":
     img_ids = utils.get_img_ids(args.image_folder)
     for img_id in img_ids:
         print("==== {} ====".format(img_id))
-        command = "python inference.py -i {}/{}.jpg -m {} -o {}/{}_mask -ps {}".format(
+        command = "python inference.py -i \"{}/{}.jpg\" -m \"{}\" -o \"{}/{}_mask\" -ps {}".format(
             args.image_folder, img_id,
             args.model_path,
             args.output_path, img_id,
