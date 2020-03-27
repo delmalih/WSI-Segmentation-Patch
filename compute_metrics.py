@@ -7,6 +7,7 @@ import argparse
 from glob import glob
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 ###############
 ## Functions ##
@@ -23,16 +24,14 @@ def read_image(path):
     return mask
 
 def compute_iou(gt, pred):
-    intersection = np.sum(gt * pred)
+    intersection = (gt * pred).sum()
     union = np.clip(gt + pred, 0, 1).sum()
     return 1. * intersection / union
 
-def compute_f1_score(gt, pred):
-    tp = ((gt == 1) * (pred == 1)).sum()
-    fp = ((gt == 0) * (pred == 1)).sum()
-    fn = ((gt == 1) * (pred == 0)).sum()
-    f1_score = 2. * tp / (2 * tp + fp + fn)
-    return f1_score
+def compute_dsc(gt, pred):
+    num = 2. * (gt * pred).sum()
+    den = gt.sum() + pred.sum()
+    return num / den
 
 ##########
 ## MAIN ##
@@ -40,13 +39,30 @@ def compute_f1_score(gt, pred):
 
 if __name__ == "__main__":
     args = parse_args()
-    img_ids = set(list(map(lambda x: x.split("/")[-1][:-7], glob("{}/*-gt.jpg".format(args.folder)))))
-    for img_id in img_ids:
+    img_ids = list(set(list(map(lambda x: x.split("/")[-1][:-7], glob("{}/*-gt.jpg".format(args.folder))))))
+    res = {}
+    for k, img_id in enumerate(img_ids):
         gt_image = read_image("{}/{}-gt.jpg".format(args.folder, img_id))
         pred_image = read_image("{}/{}-thresh.jpg".format(args.folder, img_id))
         iou = compute_iou(gt_image, pred_image)
-        f1_score = compute_f1_score(gt_image, pred_image)
-        print("{} : IoU = {}| F1 score = {}".format(
-            img_id, iou, f1_score
+        dsc = compute_dsc(gt_image, pred_image)
+        print("[{:03d}/{:3d}] {:62s} : IoU = {:.2f}% | DSC = {:.2f}%".format(
+            k+1, len(img_ids), img_id,
+            iou * 100, dsc * 100
         ))
-        
+        res[img_id] = {
+            "size": gt_image.size,
+            "log_size": np.log(gt_image.size),
+            "iou": iou,
+            "dsc": dsc,
+        }
+    print("Mean IoU = {}".format(np.mean([res[img_id]["iou"] for img_id in res])))
+    print("Mean DSC = {}".format(np.mean([res[img_id]["dsc"] for img_id in res])))
+    
+    plt.figure()
+    plt.plot([res[img_id]["log_size"] for img_id in res], [res[img_id]["iou"] for img_id in res], 'o', label="IoU")
+    plt.plot([res[img_id]["log_size"] for img_id in res], [res[img_id]["dsc"] for img_id in res], 'o', label="DSC")
+    plt.ylabel("Metric (%)")
+    plt.xlabel("Log size of images")
+    plt.legend()
+    plt.show()
