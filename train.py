@@ -21,8 +21,11 @@ from datagenerator import DataGenerator
 
 def train(model, train_img_ids, val_img_ids, args):
     train_generator = DataGenerator(train_img_ids, args.train_images_folder, args.batch_size, args.patch_size)
-    val_generator = DataGenerator(val_img_ids, args.val_images_folder, args.batch_size, args.patch_size)
     checkpointer = keras.callbacks.ModelCheckpoint(filepath=args.model_path, verbose=1, save_best_only=False)
+    if len(val_img_ids) > 0:
+        val_generator = DataGenerator(val_img_ids, args.val_images_folder, args.batch_size, args.patch_size)
+    else:
+        val_generator = None
     model.fit_generator(generator=train_generator,
                         validation_data=val_generator,
                         epochs=args.epochs, verbose=1,
