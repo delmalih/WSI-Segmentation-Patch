@@ -46,3 +46,7 @@ python inference_all.py -i <IMAGES_FOLDER> \ # <-- required
                         -o <OUTPUT_FOLDER> \ # <-- required
                         -ps <PATCH_SIZE> \ # <-- default: 256
 ```
+
+### Link to the final presentation : 
+
+https://youtu.be/SAZHsepdNuk
